@@ -12,24 +12,24 @@ trait ExceptionTrait
 	public function apiException($request, $e)
 	{
         if($this->isModel($e)) {
-        	return modelResponse($e);
+        	return $this->modelResponse($e);
         }
 
         if($this->isHttp($e)) {
         	return $this->httpResponse($e);
         }
 
-        return parent::render($request, $exception);
+        return parent::render($request, $e);
 	}
 
 	protected function isModel($e)
 	{
-		retrun ($e instanceof ModelNotFoundException);
+		return $e instanceof ModelNotFoundException;
 	}
 
 	protected function isHttp($e)
 	{
-		return ($e instanceof NotFoundHttpException);
+		return $e instanceof NotFoundHttpException;
 	}
 
 	protected function modelResponse($e)
