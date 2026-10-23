@@ -1,69 +1,67 @@
-<p align="center"><img src="https://laravel.com/assets/img/components/logo-laravel.svg"></p>
+# laravel-checkout-api
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/d/total.svg" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/v/stable.svg" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/license.svg" alt="License"></a>
-</p>
+A RESTful e-commerce API for products and reviews, built with **Laravel 5.7** and **Passport (OAuth2)**.
 
-## About Laravel
+> **Status:** an early project from 2018, kept as-is. Next up is a rebuild on current Laravel that adds a checkout endpoint (see [Roadmap](#roadmap)).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel attempts to take the pain out of development by easing common tasks used in the majority of web projects, such as:
+## What it shows
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **API Resources:** responses are shaped separately from the database models. The API exposes `description` while the column is `details`, and computed fields come from the resource, not the table.
+- **Computed fields:** discounted `totalPrice` and the average `rating` from reviews are calculated on read.
+- **Linked resources:** every product links to its reviews (`href.reviews`), so clients follow links instead of building URLs.
+- **Nested routes:** reviews live under their product, at `/api/products/{product}/reviews`.
+- **Ownership checks:** only the user who owns a product can update or delete it.
+- **JSON errors:** a custom exception handler returns clean JSON for unknown routes and missing records, instead of HTML error pages.
+- **OAuth2:** write endpoints are protected with Laravel Passport (`auth:api`).
 
-Laravel is accessible, yet powerful, providing tools needed for large, robust applications.
+## Endpoints
 
-## Learning Laravel
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/api/products` | – | Paginated product list (20 per page) |
+| GET | `/api/products/{id}` | – | Product details with price, rating and review link |
+| POST | `/api/products` | ✓ | Create a product (validated) |
+| PUT | `/api/products/{id}` | ✓ owner | Update a product |
+| DELETE | `/api/products/{id}` | ✓ owner | Delete a product |
+| GET | `/api/products/{id}/reviews` | – | Reviews for a product |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of any modern web application framework, making it a breeze to get started learning the framework.
+## Example response
 
-If you're not in the mood to read, [Laracasts](https://laracasts.com) contains over 1100 video tutorials on a range of topics including Laravel, modern PHP, unit testing, JavaScript, and more. Boost the skill level of yourself and your entire team by digging into our comprehensive video library.
+`GET /api/products/1` (sample data, shape taken from `ProductResource`)
 
-## Laravel Sponsors
+```json
+{
+  "data": {
+    "name": "Wireless Keyboard",
+    "description": "Compact Bluetooth keyboard",
+    "price": 80,
+    "stock": 12,
+    "discount": 25,
+    "totalPrice": 60,
+    "rating": 4.33,
+    "href": {
+      "reviews": "http://localhost:8000/api/products/1/reviews"
+    }
+  }
+}
+```
 
-We would like to extend our thanks to the following sponsors for helping fund on-going Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell):
+## Project layout
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[British Software Development](https://www.britishsoftware.co)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- [UserInsights](https://userinsights.com)
-- [Fragrantica](https://www.fragrantica.com)
-- [SOFTonSOFA](https://softonsofa.com/)
-- [User10](https://user10.com)
-- [Soumettre.fr](https://soumettre.fr/)
-- [CodeBrisk](https://codebrisk.com)
-- [1Forge](https://1forge.com)
-- [TECPRESSO](https://tecpresso.co.jp/)
-- [Runtime Converter](http://runtimeconverter.com/)
-- [WebL'Agence](https://weblagence.com/)
-- [Invoice Ninja](https://www.invoiceninja.com)
-- [iMi digital](https://www.imi-digital.de/)
-- [Earthlink](https://www.earthlink.ro/)
-- [Steadfast Collective](https://steadfastcollective.com/)
-- [We Are The Robots Inc.](https://watr.mx/)
-- [Understand.io](https://www.understand.io/)
+```
+app/Http/Controllers/   ProductController, ReviewController
+app/Http/Resources/     ProductResource, ProductCollection, ReviewResource
+app/Http/Requests/      ProductRequest (validation)
+app/Exceptions/         JSON error handling, ownership exception
+database/               migrations, factories, seeders
+```
 
-## Contributing
+## Roadmap
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- Rebuild on current Laravel with Sanctum, policies and money stored as integer cents
+- **Checkout endpoint:** an `Idempotency-Key` header, stock reserved inside a database transaction with row locks so it can't oversell, and order states
+- Finish the review write endpoints, plus feature tests and CI
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT
